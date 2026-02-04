@@ -8,4 +8,6 @@ const roomSchema = new Schema({
     createdAt: { type: Date, default: Date.now }
 }, { collection: 'rooms' }, { timestamps: true });
 
+
+
 export const Room = mongoose.model('Room', roomSchema);
