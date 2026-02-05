@@ -6,8 +6,7 @@ const roomSchema = new Schema({
     description: { type: String, required: false },
     members: { type: [Object], default: [] },
     createdAt: { type: Date, default: Date.now }
-}, { collection: 'rooms' }, { timestamps: true });
+}, { collection: "rooms", timestamps: true });
 
-
-
-export const Room = mongoose.model('Room', roomSchema);
+const Room = mongoose.model("Room", roomSchema);
+export default Room;

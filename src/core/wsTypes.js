@@ -1,0 +1,16 @@
+export const WS_TYPES = Object.freeze({
+    ERROR: "error",
+    REQUEST_USERNAME: "request_username",
+    SET_USERNAME: "set_username",
+    CHAT_HISTORY: "chat_history",
+    ONLINE_USERS: "online_users",
+    USER_JOINED: "user_joined",
+    USER_LEFT: "user_left",
+    USER_TYPING: "user_typing",
+    TYPING: "typing",
+    DM: "dm",
+    JOIN: "join",
+    JOINED_ROOM: "joined_room",
+    ROOM_MESSAGE: "room_message",
+    CHAT: "chat",
+});

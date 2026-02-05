@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Build a server that can broadcast messages to connected clients.",
   "main": "index.js",
+  "bin": {
+    "broadcast-server": "./src/commander.js"
+  },
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"

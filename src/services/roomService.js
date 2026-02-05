@@ -1,5 +1,5 @@
 /** Room system */
-import { Room } from '../models/Room.js';
+import Room from "../models/Room.js";
 
 export function getRooms() {
     const rooms = Room.find();
@@ -8,19 +8,13 @@ export function getRooms() {
 
 /** Join room helper */
 export async function joinRoom(ws, room) {
-    const createdRoom = null;
+    const existingRoom = await Room.findOne({ name: room });
+    const activeRoom = existingRoom ?? (await Room.create({ name: room }));
 
-    const findedRoom = await Room.findOne({ name: room });
-    if (!findedRoom) {
-        createdRoom = await Room.create({ name: room });
-    }
+    activeRoom.members.push({ username: ws.username, joinedAt: Date.now() });
+    await activeRoom.save();
 
-    createdRoom.members.push({ username: ws.username, joinedAt: Date.now() });
-    
-    await createdRoom.save();
-
-    return createdRoom;
-   
+    return activeRoom;
 }
 
 /** Leave room helper */
