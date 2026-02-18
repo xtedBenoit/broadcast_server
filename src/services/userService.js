@@ -1,34 +1,46 @@
-const onlineUsers = new Set();
+const onlineUsersByTenant = new Map();
 import Room from "../models/Room.js";
 import User from "../models/User.js";
 
 
-export function addOnlineUser(username) {
-    onlineUsers.add(username);
+function toTenantKey(tenantId) {
+    return tenantId || "public";
 }
 
-export function removeInlineUser(username) {
-    onlineUsers.delete(username);
+function getOrCreateTenantSet(tenantId) {
+    const key = toTenantKey(tenantId);
+    if (!onlineUsersByTenant.has(key)) {
+        onlineUsersByTenant.set(key, new Set());
+    }
+    return onlineUsersByTenant.get(key);
 }
 
-export function getOnlineUsers() {
-    return [...onlineUsers];
+export function addOnlineUser(tenantId, username) {
+    getOrCreateTenantSet(tenantId).add(username);
 }
 
-export async function getUsersForRoom(room) {
-    const roomData = await Room.findOne({ name: room }).exec();
-    if(!roomData) return [];
+export function removeInlineUser(tenantId, username) {
+    const users = getOrCreateTenantSet(tenantId);
+    users.delete(username);
+}
 
-    const usernames = roomData.members.map(m => m.username);
-    const users = await User.find({ username: { $in: usernames } }).exec();
-    return users;
+export function getOnlineUsers(tenantId) {
+    return [...getOrCreateTenantSet(tenantId)];
+}
+
+export async function getUsersForRoom(tenantId, room) {
+    const roomData = await Room.findOne({ tenantId, name: room }).exec();
+    if (!roomData) return [];
+
+    // Only expose usernames to clients.
+    return roomData.members.map((m) => m.username);
 }
 
 export async function welcomeNewUserInRoom(ws) {
     if (!ws.currentRoom) return;
-    const room = await Room.findOne({ name: ws.currentRoom });
+    const room = await Room.findOne({ tenantId: ws.tenantId, name: ws.currentRoom });
     if (!room) return;
-    const usernames = room.members.map(m => m.username);
+    const usernames = room.members.map((m) => m.username);
     const users = await User.find({ username: { $in: usernames } }).exec();
     return users;
 }

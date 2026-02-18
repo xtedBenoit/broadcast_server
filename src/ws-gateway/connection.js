@@ -10,6 +10,9 @@ export function attachConnectionHandlers(wss) {
 
         ws.isAlive = true;
         ws.currentRoom = null;
+        ws.on("pong", () => {
+            ws.isAlive = true;
+        });
 
         ws.on("message", async (data) => {
             let msg;
@@ -25,18 +28,18 @@ export function attachConnectionHandlers(wss) {
 
         ws.on("close", async () => {
             if (ws.username) {
-                removeInlineUser(ws.username);
+                removeInlineUser(ws.tenantId, ws.username);
 
                 // Notify everyone
                 broadcastAll(wss, {
                     type: WS_TYPES.ONLINE_USERS,
-                    users: getOnlineUsers(),
-                });
+                    users: getOnlineUsers(ws.tenantId),
+                }, ws.tenantId);
 
                 broadcastAll(wss, {
                     type: WS_TYPES.USER_LEFT,
                     username: ws.username,
-                });
+                }, ws.tenantId);
             }
 
             await leaveRoom(ws);

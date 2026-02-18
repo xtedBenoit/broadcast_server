@@ -2,13 +2,13 @@
   "name": "broadcast_server",
   "version": "1.0.0",
   "description": "Build a server that can broadcast messages to connected clients.",
-  "main": "index.js",
+  "main": "src/server.js",
   "bin": {
     "broadcast-server": "./src/commander.js"
   },
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "test": "node --test tests/chat-api.test.js tests/auth.test.js tests/admin-projects.test.js"
   },
   "type": "module",
   "author": "teddy",

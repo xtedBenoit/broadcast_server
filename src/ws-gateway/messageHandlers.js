@@ -10,43 +10,45 @@ function sendError(ws, message) {
 
 async function handleSetUsername({ wss, ws, msg }) {
     ws.username = msg.username || "Anonymous";
-    addOnlineUser(ws.username);
+    addOnlineUser(ws.tenantId, ws.username);
 
     if (ws.currentRoom) {
         ws.send(
             JSON.stringify({
                 type: WS_TYPES.CHAT_HISTORY,
-                history: getChatHistory(),
+                history: getChatHistory(ws.tenantId),
             })
         );
     }
 
     let users = [];
     try {
-        users = await getUsersForRoom(ws.currentRoom);
+        users = await getUsersForRoom(ws.tenantId, ws.currentRoom);
     } catch {
-        users = getOnlineUsers();
+        users = getOnlineUsers(ws.tenantId);
     }
 
     broadcastAll(wss, {
         type: WS_TYPES.ONLINE_USERS,
         users,
-    });
+    }, ws.tenantId);
 
     if (ws.currentRoom) {
         broadcastRoom(
+            wss,
             ws.currentRoom,
             {
                 type: WS_TYPES.USER_JOINED,
                 username: ws.username,
             },
-            ws
+            ws,
+            ws.tenantId
         );
     } else {
         broadcastExcept(wss, ws, {
             type: WS_TYPES.USER_JOINED,
             username: ws.username,
-        });
+        }, ws.tenantId);
     }
 }
 
@@ -55,11 +57,13 @@ function handleTyping({ wss, ws, msg }) {
         type: WS_TYPES.USER_TYPING,
         username: ws.username,
         status: msg.status, // true = typing, false = stopped
-    });
+    }, ws.tenantId);
 }
 
 function handleDm({ wss, ws, msg }) {
-    const target = [...wss.clients].find((c) => c.username === msg.to);
+    const target = [...wss.clients].find(
+        (c) => c.username === msg.to && c.tenantId === ws.tenantId
+    );
 
     if (!target) {
         sendError(ws, `User '${msg.to}' not found`);
@@ -93,6 +97,7 @@ async function handleJoin({ ws, msg }) {
 function handleRoomMessage({ wss, ws, msg }) {
     const obj = {
         type: WS_TYPES.ROOM_MESSAGE,
+        tenantId: ws.tenantId,
         from: ws.username,
         room: ws.currentRoom,
         text: msg.text,
@@ -101,22 +106,23 @@ function handleRoomMessage({ wss, ws, msg }) {
 
     saveHistory(obj);
     if (ws.currentRoom) {
-        broadcastRoom(ws.currentRoom, obj, ws);
+        broadcastRoom(wss, ws.currentRoom, obj, ws, ws.tenantId);
     } else {
-        broadcastExcept(wss, ws, obj);
+        broadcastExcept(wss, ws, obj, ws.tenantId);
     }
 }
 
 function handleChat({ wss, ws, msg }) {
     const obj = {
         type: WS_TYPES.CHAT,
+        tenantId: ws.tenantId,
         from: ws.username,
         text: msg.text,
         time: Date.now(),
     };
 
     saveHistory(obj);
-    broadcastExcept(wss, ws, obj);
+    broadcastExcept(wss, ws, obj, ws.tenantId);
 }
 
 export async function handleMessage({ wss, ws, msg }) {
